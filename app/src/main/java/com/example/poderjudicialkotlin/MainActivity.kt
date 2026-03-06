@@ -1,7 +1,5 @@
 package com.example.poderjudicialkotlin
 
-import androidx.compose.runtime.remember
-
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -17,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +30,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNav() {
-
     val navController = rememberNavController()
 
     val context = LocalContext.current
@@ -41,11 +38,25 @@ fun AppNav() {
 
     NavHost(navController = navController, startDestination = start) {
 
+        composable("comprobante/{codigo}/{titulo}") { backStackEntry ->
+            val codigo = backStackEntry.arguments?.getString("codigo") ?: ""
+            val titulo = backStackEntry.arguments?.getString("titulo") ?: ""
+            ComprobanteScreen(codigoAcceso = codigo, titulo = titulo)
+        }
+
+        composable("mi_tramite/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
+            MiTramiteDetailScreen(id)
+        }
 
 
         composable("login") {
             LoginScreen(
-                onLoginSuccess = { navController.navigate("home") }
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -54,13 +65,25 @@ fun AppNav() {
                 onGoId = { navController.navigate("id") },
                 onGoTramites = { navController.navigate("tramites") },
                 onGoNomina = { navController.navigate("nomina") },
-                onGoNoticias = { navController.navigate("noticias") }
+                onGoNoticias = { navController.navigate("noticias") },
+                onLogout = {
+                    session.clear()
+                    navController.navigate("login") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
             )
         }
 
-        composable("id") { SimpleScreen("ID") }
-        composable("tramites") { SimpleScreen("Trámites") }
-        composable("nomina") { SimpleScreen("Nómina") }
+        composable("id") { IdScreen() }
+        composable("tramites") { TramitesScreen() }
+        composable("nomina") { NominaScreen(navController) }
+
+        composable("comprobante/{codigo}/{titulo}") { backStackEntry ->
+            val codigo = backStackEntry.arguments?.getString("codigo") ?: ""
+            val titulo = backStackEntry.arguments?.getString("titulo") ?: ""
+            ComprobanteScreen(codigoAcceso = codigo, titulo = titulo)
+        }
         composable("noticias") { NoticiasScreen() }
     }
 }
@@ -68,9 +91,11 @@ fun AppNav() {
 @Composable
 fun HomeScreen(
     onGoId: () -> Unit,
+
     onGoTramites: () -> Unit,
     onGoNomina: () -> Unit,
-    onGoNoticias: () -> Unit
+    onGoNoticias: () -> Unit,
+    onLogout: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -88,6 +113,15 @@ fun HomeScreen(
         Button(onClick = onGoNomina, modifier = Modifier.fillMaxWidth()) { Text("Nómina") }
         Spacer(modifier = Modifier.height(12.dp))
         Button(onClick = onGoNoticias, modifier = Modifier.fillMaxWidth()) { Text("Noticias") }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedButton(
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cerrar sesión")
+        }
     }
 }
 

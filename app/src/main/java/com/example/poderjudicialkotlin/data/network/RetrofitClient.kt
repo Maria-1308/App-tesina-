@@ -7,8 +7,17 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // ⚠️ AQUÍ pondremos la URL base real en el siguiente paso
+    // URL DE LA LA BASE
     private const val BASE_URL = "https://tribunalelectronico.gob.mx/empleados-api/"
+
+    val identificacionApi: IdentificacionApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(IdentificacionApi::class.java)
+    }
 
     private val client: OkHttpClient by lazy {
         val logger = HttpLoggingInterceptor().apply {
@@ -27,4 +36,23 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
     }
+
+    val tramitesApi: TramitesApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(TramitesApi::class.java)
+    }
+    val nominaApi: NominaApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(NominaApi::class.java)
+    }
+
+
 }

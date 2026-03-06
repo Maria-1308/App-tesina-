@@ -1,5 +1,9 @@
 package com.example.poderjudicialkotlin
 
+import okhttp3.ResponseBody
+
+import com.example.poderjudicialkotlin.data.network.LoginResponse
+import retrofit2.Response
 
 import androidx.compose.ui.platform.LocalContext
 import com.example.poderjudicialkotlin.SessionManager
@@ -14,11 +18,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
-// 🔹 Coroutines
+
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
-// 🔹 Network
+
 import com.example.poderjudicialkotlin.data.network.LoginRequest
 import com.example.poderjudicialkotlin.data.network.RetrofitClient
 
@@ -27,10 +31,10 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
 
-    // 🔹 Coroutine scope
+
     val scope = rememberCoroutineScope()
 
-    // 🔹 Estados
+    //  Estados
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -47,7 +51,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
 
-        // 🔹 Logo
+        //  Logo
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -61,7 +65,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 🔹 Usuario
+        //  Usuario
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
@@ -72,7 +76,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Contraseña
+        // Contraseña
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -84,7 +88,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Tipo de empleado
+        // Tipo de empleado
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
                 selected = tipoEmpleado == "nomina",
@@ -99,7 +103,7 @@ fun LoginScreen(
             Text("Contrato")
         }
 
-        // 🔹 Recordarme
+        // Recordarme
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = rememberMe,
@@ -108,7 +112,7 @@ fun LoginScreen(
             Text("Recordarme")
         }
 
-        // 🔹 Mensaje de error
+        //  Mensaje de error
         if (errorMsg.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -119,7 +123,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🔹 Botón Login
+        //  Boton Login
         Button(
             onClick = {
 
@@ -135,25 +139,36 @@ fun LoginScreen(
 
                     scope.launch {
                         try {
-                            val res = RetrofitClient.api.login(
-                                LoginRequest(
-                                    username = username,
-                                    password = password,
-                                    tipoEmpleado = tipoEmpleado
-                                )
+                            val res: Response<LoginResponse> = RetrofitClient.api.login(
+                                LoginRequest(username, password, tipoEmpleado)
                             )
+
 
                             isLoading = false
 
+                            // res ya existe aqui arriba
+
                             if (res.isSuccessful) {
-                                if (rememberMe) {
-                                    session.setLoggedIn(true)
+                                val body = res.body()
+                                val token = body?.data?.authToken
+                                val msg = body?.message
+
+                                if (!token.isNullOrBlank()) {
+                                    session.setToken(token)
+
+                                    if (rememberMe) {
+                                        session.setLoggedIn(true)
+                                    }
+
+                                    onLoginSuccess()
+                                } else {
+                                    errorMsg = msg ?: "Usuario o contraseña incorrectos."
                                 }
-                                onLoginSuccess()
+                            } else {
+                                errorMsg = "Error al iniciar sesión (${res.code()})"
                             }
-                            else {
-                                errorMsg = "Usuario o contraseña incorrectos."
-                            }
+
+
 
                         } catch (e: Exception) {
                             isLoading = false

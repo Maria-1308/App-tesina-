@@ -40,7 +40,10 @@ android {
 }
 
 dependencies {
+    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
+
+    implementation("com.google.zxing:core:3.5.3")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

@@ -17,4 +17,15 @@ class SessionManager(context: Context) {
     fun clear() {
         prefs.edit().clear().apply()
     }
+
+    fun setToken(token: String) {
+        prefs.edit().putString("token", token).apply()
+    }
+
+    fun getToken(): String? {
+        return prefs.getString("token", null)
+    }
+
+
+
 }
