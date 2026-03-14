@@ -54,5 +54,14 @@ object RetrofitClient {
             .create(NominaApi::class.java)
     }
 
+    val noticiasApi: NoticiasApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(NoticiasApi::class.java)
+    }
+
 
 }
