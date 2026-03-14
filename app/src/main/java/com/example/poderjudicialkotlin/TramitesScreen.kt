@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.poderjudicialkotlin.data.network.RetrofitClient
 import com.example.poderjudicialkotlin.data.network.TramiteDto
-
 import com.example.poderjudicialkotlin.data.network.SolicitudDto
 
 @Composable
