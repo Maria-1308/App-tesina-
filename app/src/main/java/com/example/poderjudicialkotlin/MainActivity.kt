@@ -41,17 +41,11 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,9 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
-import com.example.poderjudicialkotlin.data.network.NoticiaDto
-import com.example.poderjudicialkotlin.data.network.RetrofitClient
+import androidx.compose.ui.platform.LocalContext
 import com.example.poderjudicialkotlin.ui.theme.BlancoPerla
 import com.example.poderjudicialkotlin.ui.theme.BorgonaPJ
 import com.example.poderjudicialkotlin.ui.theme.GrisClaroPJ
@@ -84,9 +76,8 @@ class MainActivity : ComponentActivity() {
 fun AppNav() {
     val navController = rememberNavController()
 
-    val context = LocalContext.current
-    val session = remember { SessionManager(context) }
-    val start = if (session.isLoggedIn()) "home" else "login"
+    // RESCATE: arrancar siempre en login para que la app abra
+    val start = "login"
 
     NavHost(
         navController = navController,
@@ -109,7 +100,6 @@ fun AppNav() {
                 onGoNomina = { navController.navigate("nomina") },
                 onGoNoticias = { navController.navigate("noticias") },
                 onLogout = {
-                    session.clear()
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
@@ -232,53 +222,25 @@ fun HomeScreen(
                     selected = false,
                     onClick = onGoId,
                     icon = { Icon(Icons.Default.Person, contentDescription = "ID") },
-                    label = { Text("ID") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MagentaPurpuraPJ,
-                        selectedTextColor = MagentaPurpuraPJ,
-                        indicatorColor = BlancoPerla,
-                        unselectedIconColor = GrisClaroPJ,
-                        unselectedTextColor = GrisClaroPJ
-                    )
+                    label = { Text("ID") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onGoTramites,
                     icon = { Icon(Icons.Default.List, contentDescription = "Trámites") },
-                    label = { Text("Trámites") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MagentaPurpuraPJ,
-                        selectedTextColor = MagentaPurpuraPJ,
-                        indicatorColor = BlancoPerla,
-                        unselectedIconColor = GrisClaroPJ,
-                        unselectedTextColor = GrisClaroPJ
-                    )
+                    label = { Text("Trámites") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onGoNomina,
                     icon = { Icon(Icons.Default.Description, contentDescription = "Nómina") },
-                    label = { Text("Nómina") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MagentaPurpuraPJ,
-                        selectedTextColor = MagentaPurpuraPJ,
-                        indicatorColor = BlancoPerla,
-                        unselectedIconColor = GrisClaroPJ,
-                        unselectedTextColor = GrisClaroPJ
-                    )
+                    label = { Text("Nómina") }
                 )
                 NavigationBarItem(
                     selected = false,
                     onClick = onGoNoticias,
                     icon = { Icon(Icons.Default.Notifications, contentDescription = "Noticias") },
-                    label = { Text("Noticias") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = MagentaPurpuraPJ,
-                        selectedTextColor = MagentaPurpuraPJ,
-                        indicatorColor = BlancoPerla,
-                        unselectedIconColor = GrisClaroPJ,
-                        unselectedTextColor = GrisClaroPJ
-                    )
+                    label = { Text("Noticias") }
                 )
             }
         }
@@ -315,15 +277,24 @@ fun HomeScreen(
                     )
                 }
 
-                IconButton(
-                    onClick = onLogout,
-                    modifier = Modifier.align(Alignment.TopEnd)
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ExitToApp,
-                        contentDescription = "Cerrar sesión",
-                        tint = Color.White
-                    )
+                    IconButton(onClick = { }) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = Color.White
+                        )
+                    }
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
 
@@ -445,53 +416,6 @@ fun QuickAccessItem(
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center
             )
-        }
-    }
-}
-
-@Composable
-fun NewsCard(
-    title: String,
-    imageUrl: String?,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .width(240.dp)
-            .height(220.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column {
-            if (!imageUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(130.dp),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(130.dp)
-                        .background(GrisClaroPJ.copy(alpha = 0.25f))
-                )
-            }
-
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = title,
-                    color = GrisOscuroPJ,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
         }
     }
 }

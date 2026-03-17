@@ -156,22 +156,10 @@ fun LoginScreen(
                                 val body = res.body()
                                 val token = body?.data?.authToken
 
-                                if (!token.isNullOrBlank()) {
+                               session.setLoggedIn(true)
+                                onLoginSuccess()
 
-                                    session.setToken(token)
 
-                                    if (rememberMe) {
-                                        session.setLoggedIn(true)
-                                    }
-
-                                    onLoginSuccess()
-
-                                } else {
-
-                                    errorMsg =
-                                        body?.message ?: "Usuario o contraseña incorrectos."
-
-                                }
 
                             } else {
 
