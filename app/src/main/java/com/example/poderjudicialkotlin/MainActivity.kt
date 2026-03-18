@@ -15,41 +15,8 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -75,7 +42,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PoderJudicialKotlinTheme {
+            MaterialTheme {
                 AppNav()
             }
         }
@@ -89,10 +56,20 @@ fun AppNav() {
     // RESCATE: arrancar siempre en login para que la app abra
     val start = "login"
 
-    NavHost(
-        navController = navController,
-        startDestination = start
-    ) {
+    NavHost(navController = navController, startDestination = start) {
+
+        composable("comprobante/{codigo}/{titulo}") { backStackEntry ->
+            val codigo = backStackEntry.arguments?.getString("codigo") ?: ""
+            val titulo = backStackEntry.arguments?.getString("titulo") ?: ""
+            ComprobanteScreen(codigoAcceso = codigo, titulo = titulo)
+        }
+
+        composable("mi_tramite/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
+            MiTramiteDetailScreen(id)
+        }
+
+
         composable("login") {
             LoginScreen(
                 onLoginSuccess = {
@@ -117,90 +94,23 @@ fun AppNav() {
             )
         }
 
-        composable("id") {
-            AppScaffold(
-                title = "Identificación",
-                currentRoute = "id",
-                onBack = { navController.popBackStack() },
-                onGoHome = { navController.navigate("home") },
-                onGoId = { },
-                onGoTramites = { navController.navigate("tramites") },
-                onGoNomina = { navController.navigate("nomina") },
-                onGoNoticias = { navController.navigate("noticias") }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    IdScreen()
-                }
-            }
-        }
-
-        composable("tramites") {
-            AppScaffold(
-                title = "Trámites",
-                currentRoute = "tramites",
-                onBack = { navController.popBackStack() },
-                onGoHome = { navController.navigate("home") },
-                onGoId = { navController.navigate("id") },
-                onGoTramites = { },
-                onGoNomina = { navController.navigate("nomina") },
-                onGoNoticias = { navController.navigate("noticias") }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    TramitesScreen()
-                }
-            }
-        }
-
-        composable("nomina") {
-            AppScaffold(
-                title = "Nómina",
-                currentRoute = "nomina",
-                onBack = { navController.popBackStack() },
-                onGoHome = { navController.navigate("home") },
-                onGoId = { navController.navigate("id") },
-                onGoTramites = { navController.navigate("tramites") },
-                onGoNomina = { },
-                onGoNoticias = { navController.navigate("noticias") }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    NominaScreen(navController)
-                }
-            }
-        }
-
-        composable("mi_tramite/{id}") { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
-            MiTramiteDetailScreen(id)
-        }
+        composable("id") { IdScreen() }
+        composable("tramites") { TramitesScreen() }
+        composable("nomina") { NominaScreen(navController) }
 
         composable("comprobante/{codigo}/{titulo}") { backStackEntry ->
             val codigo = backStackEntry.arguments?.getString("codigo") ?: ""
             val titulo = backStackEntry.arguments?.getString("titulo") ?: ""
             ComprobanteScreen(codigoAcceso = codigo, titulo = titulo)
         }
-
-        composable("noticias") {
-            AppScaffold(
-                title = "Noticias",
-                currentRoute = "noticias",
-                onBack = { navController.popBackStack() },
-                onGoHome = { navController.navigate("home") },
-                onGoId = { navController.navigate("id") },
-                onGoTramites = { navController.navigate("tramites") },
-                onGoNomina = { navController.navigate("nomina") },
-                onGoNoticias = { }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding)) {
-                    NoticiasScreen()
-                }
-            }
-        }
+        composable("noticias") { NoticiasScreen() }
     }
 }
 
 @Composable
 fun HomeScreen(
     onGoId: () -> Unit,
+
     onGoTramites: () -> Unit,
     onGoNomina: () -> Unit,
     onGoNoticias: () -> Unit,
