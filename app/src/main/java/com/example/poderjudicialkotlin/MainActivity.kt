@@ -1,5 +1,15 @@
 package com.example.poderjudicialkotlin
 
+
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import com.example.poderjudicialkotlin.data.network.NoticiaDto
+import com.example.poderjudicialkotlin.data.network.RetrofitClient
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -196,10 +206,24 @@ fun HomeScreen(
     onGoNoticias: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val noticiasDemo = listOf(
-        "La Magistrada Presidenta asistió a la ceremonia cívica",
-        "Te invitamos a acudir a la jornada de Medicina Preventiva"
-    )
+
+
+    var noticias by remember { mutableStateOf<List<NoticiaDto>>(emptyList()) }
+    var loadingNoticias by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        try {
+            val res = RetrofitClient.noticiasApi.getNoticiasRecientes()
+            if (res.isSuccessful) {
+                noticias = res.body() ?: emptyList()
+            }
+        } catch (e: Exception) {
+            println("Error cargando noticias en Home: ${e.message}")
+        } finally {
+            loadingNoticias = false
+        }
+    }
 
     Scaffold(
         containerColor = BlancoPerla,
@@ -357,36 +381,84 @@ fun HomeScreen(
                 contentPadding = PaddingValues(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(noticiasDemo) { noticia ->
-                    Card(
-                        modifier = Modifier
-                            .width(240.dp)
-                            .height(180.dp)
-                            .clickable { onGoNoticias() },
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                    ) {
-                        Column {
+                if (loadingNoticias) {
+                    items(3) {
+                        Card(
+                            modifier = Modifier
+                                .width(240.dp)
+                                .height(180.dp),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(105.dp)
-                                    .background(GrisClaroPJ.copy(alpha = 0.25f))
+                                    .fillMaxSize()
+                                    .background(GrisClaroPJ.copy(alpha = 0.2f))
                             )
-
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = noticia,
-                                    color = GrisOscuroPJ,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
                         }
                     }
+                } else {
+                    items(noticias.take(5)) { noticia ->
+                        NewsCard(
+                            title = noticia.message ?: "Sin título",
+                            imageUrl = noticia.image,
+                            onClick = {
+                                val link = noticia.link
+                                if (!link.isNullOrBlank()) {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+                                    context.startActivity(intent)
+                                }
+                            }
+                        )
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun NewsCard(
+    title: String,
+    imageUrl: String?,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(240.dp)
+            .height(220.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column {
+            if (!imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(130.dp),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(130.dp)
+                        .background(GrisClaroPJ.copy(alpha = 0.25f))
+                )
+            }
+
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = title,
+                    color = GrisOscuroPJ,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -422,27 +494,77 @@ fun QuickAccessItem(
 
 @Composable
 fun NoticiasScreen() {
+    var noticias by remember { mutableStateOf<List<NoticiaDto>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+
     val context = LocalContext.current
-    val url = "https://www.facebook.com/share/1FGGXmWkYw/?mibextid=wwXIfr"
+
+    LaunchedEffect(Unit) {
+        try {
+            val res = RetrofitClient.noticiasApi.getNoticiasRecientes()
+            if (res.isSuccessful) {
+                noticias = res.body() ?: emptyList()
+            }
+        } catch (e: Exception) {
+            println("Error cargando noticias: ${e.message}")
+        } finally {
+            loading = false
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Text("Noticias", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(20.dp))
+        if (loading) {
+            Text("Cargando noticias...")
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(noticias) { noticia ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val link = noticia.link
+                                if (!link.isNullOrBlank()) {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+                                    context.startActivity(intent)
+                                }
+                            },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column {
+                            if (!noticia.image.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = noticia.image,
+                                    contentDescription = noticia.message,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(180.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
 
-        Button(
-            onClick = {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                context.startActivity(intent)
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Ver en Facebook")
+                            Column(
+                                modifier = Modifier.padding(12.dp)
+                            ) {
+                                Text(
+                                    text = noticia.message ?: "Sin título",
+                                    color = GrisOscuroPJ,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
