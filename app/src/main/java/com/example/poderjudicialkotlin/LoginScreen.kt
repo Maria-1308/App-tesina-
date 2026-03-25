@@ -14,16 +14,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.poderjudicialkotlin.data.network.LoginRequest
+import com.example.poderjudicialkotlin.data.network.LoginResponse
+import com.example.poderjudicialkotlin.data.network.RetrofitClient
 import com.example.poderjudicialkotlin.ui.theme.*
 import kotlinx.coroutines.launch
 import retrofit2.Response
-import com.example.poderjudicialkotlin.data.network.*
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
-
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var tipoEmpleado by remember { mutableStateOf("nomina") }
@@ -42,7 +43,6 @@ fun LoginScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Spacer(modifier = Modifier.height(40.dp))
 
         Image(
@@ -85,7 +85,6 @@ fun LoginScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             RadioButton(
                 selected = tipoEmpleado == "nomina",
                 onClick = { tipoEmpleado = "nomina" },
@@ -114,7 +113,6 @@ fun LoginScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Checkbox(
                 checked = rememberMe,
                 onCheckedChange = { rememberMe = it },
@@ -126,11 +124,18 @@ fun LoginScreen(
             Text("Recordarme", color = GrisOscuroPJ)
         }
 
+        if (errorMsg.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMsg,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
-
                 errorMsg = when {
                     username.isBlank() || password.isBlank() ->
                         "Por favor ingresa usuario y contraseña"
@@ -138,12 +143,10 @@ fun LoginScreen(
                 }
 
                 if (errorMsg.isEmpty()) {
-
                     isLoading = true
 
                     scope.launch {
                         try {
-
                             val res: Response<LoginResponse> =
                                 RetrofitClient.api.login(
                                     LoginRequest(username, password, tipoEmpleado)
@@ -152,30 +155,31 @@ fun LoginScreen(
                             isLoading = false
 
                             if (res.isSuccessful) {
-
                                 val body = res.body()
                                 val token = body?.data?.authToken
 
-                               session.setLoggedIn(true)
-                                onLoginSuccess()
+                                println("LOGIN BODY = $body")
 
-
-
+                                if (body?.success == true && !token.isNullOrBlank()) {
+                                    session.setUsername(username)
+                                    session.setToken(token)
+                                    session.setLoggedIn(true)
+                                    onLoginSuccess()
+                                } else {
+                                    errorMsg = body?.errors?.joinToString("\n")
+                                        ?: body?.message
+                                                ?: "Usuario o contraseña incorrectos."
+                                }
                             } else {
-
                                 errorMsg = "Error al iniciar sesión (${res.code()})"
-
                             }
 
                         } catch (e: Exception) {
-
                             isLoading = false
                             errorMsg = "Error de conexión"
-
                         }
                     }
                 }
-
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -213,7 +217,7 @@ fun LoginScreen(
             text =
                 "Boulevard Praxedis Balboa #2207 entre López Velarde y \n" +
                         "Díaz Mirón Colonia Miguel Hidalgo C.P. 87090 Tel. (834)\n" +
-                        " 318-7110 Cd. Victoria, Tamaulipas \n" ,
+                        "318-7110 Cd. Victoria, Tamaulipas",
             style = MaterialTheme.typography.bodySmall,
             color = GrisOscuroPJ,
             textAlign = TextAlign.Center
